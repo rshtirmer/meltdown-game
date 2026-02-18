@@ -3,8 +3,10 @@ import { GameConfig } from './core/GameConfig.js';
 import { eventBus, Events } from './core/EventBus.js';
 import { gameState } from './core/GameState.js';
 import { initAudioBridge } from './audio/AudioBridge.js';
+import { initPlayFun } from './playfun.js';
 
 initAudioBridge();
+initPlayFun();
 
 const game = new Phaser.Game(GameConfig);
 
