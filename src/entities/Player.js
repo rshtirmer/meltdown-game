@@ -1,49 +1,39 @@
 import Phaser from 'phaser';
-import { PLAYER, GAME } from '../core/Constants.js';
+import { PLAYER, GAME, SPRITE_SCALE } from '../core/Constants.js';
 import { eventBus, Events } from '../core/EventBus.js';
+import { renderSpriteSheet } from '../core/PixelRenderer.js';
+import { CYBER } from '../sprites/palette.js';
+import { playerFrames } from '../sprites/player.js';
+
+const PLAYER_KEY = 'player-sprite';
 
 export class Player {
   constructor(scene) {
     this.scene = scene;
 
-    // Create a glowing orb: outer glow ring + inner bright circle
-    const container = scene.add.container(PLAYER.START_X, PLAYER.START_Y);
+    // Render the player spritesheet texture (16x16, 2 frames)
+    renderSpriteSheet(scene, playerFrames, CYBER, PLAYER_KEY, SPRITE_SCALE);
 
-    // Outer glow (larger, semi-transparent)
-    const glow = scene.add.circle(0, 0, PLAYER.SIZE * 1.8, PLAYER.COLOR, 0.15);
-    container.add(glow);
+    // Create physics sprite
+    this.sprite = scene.physics.add.sprite(PLAYER.START_X, PLAYER.START_Y, PLAYER_KEY);
 
-    // Inner bright core
-    const core = scene.add.circle(0, 0, PLAYER.SIZE, PLAYER.COLOR);
-    container.add(core);
+    // Create pulsing animation (2 frames at ~4fps)
+    if (!scene.anims.exists('player-pulse')) {
+      scene.anims.create({
+        key: 'player-pulse',
+        frames: scene.anims.generateFrameNumbers(PLAYER_KEY, { start: 0, end: 1 }),
+        frameRate: 4,
+        repeat: -1,
+      });
+    }
+    this.sprite.play('player-pulse');
 
-    // Bright center dot
-    const center = scene.add.circle(0, 0, PLAYER.SIZE * 0.4, 0xffffff);
-    container.add(center);
-
-    this.sprite = scene.physics.add.existing(container);
-    this.sprite.body.setCircle(
-      PLAYER.SIZE,
-      -PLAYER.SIZE,
-      -PLAYER.SIZE
-    );
+    // Set up physics body as a circle matching the sprite visual
+    // The sprite pixel grid is 16x16 at SPRITE_SCALE, so actual texture size is 16*SPRITE_SCALE
+    const spritePixelSize = 16 * SPRITE_SCALE;
+    const bodyRadius = spritePixelSize / 2;
+    this.sprite.body.setCircle(bodyRadius, 0, 0);
     this.sprite.body.setCollideWorldBounds(true);
-
-    // Store references for glow animation
-    this.glow = glow;
-    this.core = core;
-
-    // Subtle pulsing glow
-    scene.tweens.add({
-      targets: glow,
-      alpha: { from: 0.15, to: 0.3 },
-      scaleX: { from: 1.0, to: 1.15 },
-      scaleY: { from: 1.0, to: 1.15 },
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
   }
 
   update(inputX, inputY) {

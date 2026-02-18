@@ -3,6 +3,9 @@
 // Device pixel ratio (capped at 2 for mobile GPU performance)
 export const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
+// Pixel art scale factor (matches PX so sprites size correctly on all displays)
+// Defined early; PX is assigned below after canvas dimensions are calculated.
+
 // Orientation: landscape on desktop, portrait on mobile
 const _isPortrait = window.innerHeight > window.innerWidth;
 
@@ -31,6 +34,10 @@ if (_deviceW / _deviceH > _designAspect) {
 // PX = canvas pixels per design pixel. Scales all absolute values (sizes, speeds, etc.)
 // from design space to canvas space. Gameplay proportions stay identical across all displays.
 export const PX = _canvasW / _designW;
+
+// SPRITE_SCALE: how many canvas pixels per sprite pixel.
+// Math.ceil(PX) ensures sprites never render sub-pixel on any display.
+export const SPRITE_SCALE = Math.ceil(PX);
 
 export const GAME = {
   WIDTH: _canvasW,

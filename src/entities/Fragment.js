@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
-import { FRAGMENT, GAME } from '../core/Constants.js';
+import { FRAGMENT, GAME, SPRITE_SCALE } from '../core/Constants.js';
+import { renderSpriteSheet } from '../core/PixelRenderer.js';
+import { CYBER } from '../sprites/palette.js';
+import { fragmentFrames } from '../sprites/items.js';
+
+const FRAGMENT_KEY = 'fragment-sprite';
 
 export class Fragment {
   /**
@@ -10,31 +15,20 @@ export class Fragment {
   constructor(scene, x, y) {
     this.scene = scene;
 
-    // Create visual: outer glow + inner bright circle
-    const container = scene.add.container(x, y);
+    // Render the fragment texture (12x12, 1 frame)
+    renderSpriteSheet(scene, fragmentFrames, CYBER, FRAGMENT_KEY, SPRITE_SCALE);
 
-    // Outer glow
-    const glow = scene.add.circle(0, 0, FRAGMENT.SIZE * 2, FRAGMENT.COLOR, 0.2);
-    container.add(glow);
+    // Create physics sprite
+    this.sprite = scene.physics.add.sprite(x, y, FRAGMENT_KEY);
 
-    // Core
-    const core = scene.add.circle(0, 0, FRAGMENT.SIZE, FRAGMENT.COLOR);
-    container.add(core);
+    // Circle body matching the 12x12 diamond sprite
+    const spritePixelSize = 12 * SPRITE_SCALE;
+    const bodyRadius = spritePixelSize / 2;
+    this.sprite.body.setCircle(bodyRadius, 0, 0);
 
-    // Bright center
-    const center = scene.add.circle(0, 0, FRAGMENT.SIZE * 0.4, FRAGMENT.GLOW_COLOR);
-    container.add(center);
-
-    this.sprite = scene.physics.add.existing(container);
-    this.sprite.body.setCircle(
-      FRAGMENT.SIZE,
-      -FRAGMENT.SIZE,
-      -FRAGMENT.SIZE
-    );
-
-    // Gentle bobbing animation
+    // Gentle bobbing animation (same as original)
     scene.tweens.add({
-      targets: container,
+      targets: this.sprite,
       y: y - FRAGMENT.BOB_AMPLITUDE,
       duration: FRAGMENT.BOB_DURATION / 2,
       yoyo: true,
@@ -42,12 +36,10 @@ export class Fragment {
       ease: 'Sine.easeInOut',
     });
 
-    // Pulsing glow
+    // Pulsing alpha for a glow effect
     scene.tweens.add({
-      targets: glow,
-      alpha: { from: 0.2, to: 0.45 },
-      scaleX: { from: 1.0, to: 1.2 },
-      scaleY: { from: 1.0, to: 1.2 },
+      targets: this.sprite,
+      alpha: { from: 1.0, to: 0.7 },
       duration: 600,
       yoyo: true,
       repeat: -1,

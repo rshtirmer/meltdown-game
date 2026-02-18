@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
-import { GAME, PLAYER, COLORS, PX, TRANSITION, FRAGMENT } from '../core/Constants.js';
+import { GAME, PLAYER, COLORS, PX, TRANSITION, FRAGMENT, SPRITE_SCALE } from '../core/Constants.js';
 import { eventBus, Events } from '../core/EventBus.js';
 import { gameState } from '../core/GameState.js';
 import { Player } from '../entities/Player.js';
 import { SpawnSystem } from '../systems/SpawnSystem.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
+import { renderPixelArt } from '../core/PixelRenderer.js';
+import { CYBER } from '../sprites/palette.js';
+import { bgTiles, glitchFragment, circuitNode } from '../sprites/tiles.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -18,6 +21,9 @@ export class GameScene extends Phaser.Scene {
     // Mobile detection
     this.isMobile = this.sys.game.device.os.android ||
       this.sys.game.device.os.iOS || this.sys.game.device.os.iPad;
+
+    // --- Background tiles and decorations ---
+    this._createBackground();
 
     // Player (centered)
     this.player = new Player(this);
@@ -68,6 +74,52 @@ export class GameScene extends Phaser.Scene {
 
     // Fade in
     this.cameras.main.fadeIn(TRANSITION.FADE_DURATION, 0, 0, 0);
+  }
+
+  /**
+   * Create the tiled circuit-board background and scatter decorative elements
+   */
+  _createBackground() {
+    // Render background tile textures
+    const tileKeys = ['bg-tile-a', 'bg-tile-b', 'bg-tile-c'];
+    for (let i = 0; i < bgTiles.length; i++) {
+      renderPixelArt(this, bgTiles[i], CYBER, tileKeys[i], SPRITE_SCALE);
+    }
+
+    // Render decoration textures
+    renderPixelArt(this, glitchFragment, CYBER, 'decor-glitch', SPRITE_SCALE);
+    renderPixelArt(this, circuitNode, CYBER, 'decor-circuit-node', SPRITE_SCALE);
+
+    // Tile size in canvas pixels
+    const tileSizePx = 16 * SPRITE_SCALE;
+
+    // Fill the game area with random tile variants
+    const cols = Math.ceil(GAME.WIDTH / tileSizePx);
+    const rows = Math.ceil(GAME.HEIGHT / tileSizePx);
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const tileIdx = Math.floor(Math.random() * tileKeys.length);
+        const tile = this.add.image(
+          c * tileSizePx + tileSizePx / 2,
+          r * tileSizePx + tileSizePx / 2,
+          tileKeys[tileIdx]
+        );
+        tile.setDepth(-10);
+      }
+    }
+
+    // Scatter 15-25 decorative elements at low alpha
+    const decorCount = 15 + Math.floor(Math.random() * 11);
+    for (let i = 0; i < decorCount; i++) {
+      const isGlitch = Math.random() < 0.6;
+      const key = isGlitch ? 'decor-glitch' : 'decor-circuit-node';
+      const dx = Math.random() * GAME.WIDTH;
+      const dy = Math.random() * GAME.HEIGHT;
+      const decor = this.add.image(dx, dy, key);
+      decor.setAlpha(0.3 + Math.random() * 0.2);
+      decor.setDepth(-5);
+    }
   }
 
   update(time, delta) {

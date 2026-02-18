@@ -1,12 +1,28 @@
 import Phaser from 'phaser';
-import { ENEMY, GAME } from '../core/Constants.js';
+import { ENEMY, GAME, SPRITE_SCALE } from '../core/Constants.js';
 import { gameState } from '../core/GameState.js';
+import { renderSpriteSheet, renderPixelArt } from '../core/PixelRenderer.js';
+import { CYBER } from '../sprites/palette.js';
+import { dataStreamFrames, codeBlockFrames, singularityFrames } from '../sprites/enemies.js';
 
 // Enemy types
 export const EnemyType = {
   DATA_STREAM: 'dataStream',
   CODE_BLOCK: 'codeBlock',
   SINGULARITY_NODE: 'singularityNode',
+};
+
+// Texture keys per enemy type
+const TEXTURE_KEYS = {
+  [EnemyType.DATA_STREAM]: 'enemy-datastream',
+  [EnemyType.CODE_BLOCK]: 'enemy-codeblock',
+  [EnemyType.SINGULARITY_NODE]: 'enemy-singularity',
+};
+
+// Animation keys (only for multi-frame types)
+const ANIM_KEYS = {
+  [EnemyType.DATA_STREAM]: 'datastream-scroll',
+  [EnemyType.SINGULARITY_NODE]: 'singularity-pulse',
 };
 
 export class Enemy {
@@ -24,32 +40,54 @@ export class Enemy {
     this.type = type;
     this.playerSprite = playerSprite || null;
 
-    const cfg = this._getConfig();
+    const textureKey = TEXTURE_KEYS[type];
 
-    // Create visual based on type
-    let visual;
+    // Render textures if they do not already exist
+    this._ensureTextures(scene);
+
+    // Create physics sprite
+    this.sprite = scene.physics.add.sprite(x, y, textureKey);
+
+    // Set up animations for multi-frame types
     if (type === EnemyType.DATA_STREAM) {
-      visual = scene.add.rectangle(0, 0, cfg.width, cfg.height, cfg.color);
-    } else if (type === EnemyType.CODE_BLOCK) {
-      visual = scene.add.rectangle(0, 0, cfg.size, cfg.size, cfg.color);
-    } else {
-      // Singularity node: small circle
-      visual = scene.add.circle(0, 0, cfg.size, cfg.color);
+      if (!scene.anims.exists(ANIM_KEYS[type])) {
+        scene.anims.create({
+          key: ANIM_KEYS[type],
+          frames: scene.anims.generateFrameNumbers(textureKey, { start: 0, end: 1 }),
+          frameRate: 6,
+          repeat: -1,
+        });
+      }
+      this.sprite.play(ANIM_KEYS[type]);
+    } else if (type === EnemyType.SINGULARITY_NODE) {
+      if (!scene.anims.exists(ANIM_KEYS[type])) {
+        scene.anims.create({
+          key: ANIM_KEYS[type],
+          frames: scene.anims.generateFrameNumbers(textureKey, { start: 0, end: 1 }),
+          frameRate: 4,
+          repeat: -1,
+        });
+      }
+      this.sprite.play(ANIM_KEYS[type]);
     }
 
-    const container = scene.add.container(x, y, [visual]);
-    this.sprite = scene.physics.add.existing(container);
-
-    // Set body size based on type
+    // Set physics body sizes to match sprite pixel dimensions
     if (type === EnemyType.DATA_STREAM) {
-      this.sprite.body.setSize(cfg.width, cfg.height);
-      this.sprite.body.setOffset(-cfg.width / 2, -cfg.height / 2);
+      // 16x8 sprite
+      const w = 16 * SPRITE_SCALE;
+      const h = 8 * SPRITE_SCALE;
+      this.sprite.body.setSize(w, h);
+      this.sprite.body.setOffset(0, 0);
     } else if (type === EnemyType.CODE_BLOCK) {
-      this.sprite.body.setSize(cfg.size, cfg.size);
-      this.sprite.body.setOffset(-cfg.size / 2, -cfg.size / 2);
+      // 16x16 sprite
+      const s = 16 * SPRITE_SCALE;
+      this.sprite.body.setSize(s, s);
+      this.sprite.body.setOffset(0, 0);
     } else {
-      // Circle body for singularity nodes
-      this.sprite.body.setCircle(cfg.size, -cfg.size, -cfg.size);
+      // Singularity node: 12x12 sprite, circle body
+      const s = 12 * SPRITE_SCALE;
+      const radius = s / 2;
+      this.sprite.body.setCircle(radius, 0, 0);
     }
 
     // Set initial velocity
@@ -60,27 +98,13 @@ export class Enemy {
     this.baseVy = vy;
   }
 
-  _getConfig() {
-    switch (this.type) {
-      case EnemyType.DATA_STREAM:
-        return {
-          width: ENEMY.DATA_STREAM.WIDTH,
-          height: ENEMY.DATA_STREAM.HEIGHT,
-          color: ENEMY.DATA_STREAM.COLOR,
-        };
-      case EnemyType.CODE_BLOCK:
-        return {
-          size: ENEMY.CODE_BLOCK.SIZE,
-          color: ENEMY.CODE_BLOCK.COLOR,
-        };
-      case EnemyType.SINGULARITY_NODE:
-        return {
-          size: ENEMY.SINGULARITY_NODE.SIZE,
-          color: ENEMY.SINGULARITY_NODE.COLOR,
-        };
-      default:
-        return { size: 20, color: 0xff0000 };
-    }
+  _ensureTextures(scene) {
+    // Data stream: 16x8, 2 frames -- use spritesheet
+    renderSpriteSheet(scene, dataStreamFrames, CYBER, TEXTURE_KEYS[EnemyType.DATA_STREAM], SPRITE_SCALE);
+    // Code block: 16x16, 1 frame -- use spritesheet for consistency
+    renderSpriteSheet(scene, codeBlockFrames, CYBER, TEXTURE_KEYS[EnemyType.CODE_BLOCK], SPRITE_SCALE);
+    // Singularity node: 12x12, 2 frames
+    renderSpriteSheet(scene, singularityFrames, CYBER, TEXTURE_KEYS[EnemyType.SINGULARITY_NODE], SPRITE_SCALE);
   }
 
   update() {
