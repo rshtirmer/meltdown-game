@@ -2,6 +2,9 @@ import Phaser from 'phaser';
 import { GameConfig } from './core/GameConfig.js';
 import { eventBus, Events } from './core/EventBus.js';
 import { gameState } from './core/GameState.js';
+import { initAudioBridge } from './audio/AudioBridge.js';
+
+initAudioBridge();
 
 const game = new Phaser.Game(GameConfig);
 

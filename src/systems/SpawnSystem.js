@@ -89,7 +89,7 @@ export class SpawnSystem {
     const enemy = new Enemy(this.scene, type, x, y, vx, vy, playerSprite);
     this.enemies.push(enemy);
 
-    eventBus.emit(Events.ENEMY_SPAWNED, { type });
+    eventBus.emit(Events.ENEMY_SPAWNED, { type, x, y });
   }
 
   /**

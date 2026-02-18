@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME, COLORS, UI, TRANSITION } from '../core/Constants.js';
+import { GAME, COLORS, UI, TRANSITION, EFFECTS } from '../core/Constants.js';
 import { eventBus, Events } from '../core/EventBus.js';
 import { gameState } from '../core/GameState.js';
 
@@ -18,15 +18,27 @@ export class GameOverScene extends Phaser.Scene {
     // --- Gradient background ---
     this.drawGradient(w, h, COLORS.BG_TOP, COLORS.BG_BOTTOM);
 
-    // --- "MELTDOWN" title ---
+    // --- "MELTDOWN" title with glitch effect ---
     const titleSize = Math.round(h * UI.TITLE_RATIO);
-    this.add.text(cx, h * 0.18, 'MELTDOWN', {
+    const title = this.add.text(cx, h * 0.18, 'MELTDOWN', {
       fontSize: titleSize + 'px',
       fontFamily: UI.FONT,
       color: '#ff3333',
       fontStyle: 'bold',
       shadow: { offsetX: 0, offsetY: 3, color: 'rgba(255,0,0,0.3)', blur: 12, fill: true },
     }).setOrigin(0.5);
+
+    // Periodic glitch shift
+    const gcfg = EFFECTS.GAMEOVER;
+    this.time.addEvent({
+      delay: gcfg.GLITCH_INTERVAL,
+      loop: true,
+      callback: () => {
+        const offset = (Math.random() - 0.5) * 2 * gcfg.GLITCH_OFFSET;
+        title.setX(cx + offset);
+        this.time.delayedCall(gcfg.GLITCH_DURATION, () => title.setX(cx));
+      },
+    });
 
     // --- "Nothing human makes it out" subtitle ---
     const subtitleSize = Math.round(h * UI.SMALL_RATIO);
@@ -57,16 +69,17 @@ export class GameOverScene extends Phaser.Scene {
       letterSpacing: 4,
     }).setOrigin(0.5);
 
-    // Score value (large, gold)
+    // Score value (large, gold) with countup
     const scoreSize = Math.round(h * UI.HEADING_RATIO * 1.3);
-    const scoreText = this.add.text(cx, panelY - panelH * 0.12, `${gameState.score}`, {
+    const finalScore = gameState.score;
+    const scoreText = this.add.text(cx, panelY - panelH * 0.12, '0', {
       fontSize: scoreSize + 'px',
       fontFamily: UI.FONT,
       color: COLORS.SCORE_GOLD,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // Scale-in animation for score
+    // Scale-in + countup animation
     scoreText.setScale(0);
     this.tweens.add({
       targets: scoreText,
@@ -75,6 +88,21 @@ export class GameOverScene extends Phaser.Scene {
       duration: 400,
       delay: 200,
       ease: 'Back.easeOut',
+      onComplete: () => {
+        // Count up from 0 to final score
+        if (finalScore > 0) {
+          const counter = { val: 0 };
+          this.tweens.add({
+            targets: counter,
+            val: finalScore,
+            duration: EFFECTS.GAMEOVER.SCORE_COUNTUP_DURATION,
+            ease: 'Quad.easeOut',
+            onUpdate: () => {
+              scoreText.setText(`${Math.round(counter.val)}`);
+            },
+          });
+        }
+      },
     });
 
     // Survival time

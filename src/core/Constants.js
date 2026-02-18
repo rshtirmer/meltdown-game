@@ -154,6 +154,134 @@ export const UI = {
   // Score HUD omitted -- Play.fun widget displays score in a deadzone at the top
 };
 
+// --- Effects ---
+
+export const EFFECTS = {
+  // Fragment collection particles
+  FRAGMENT_COLLECT: {
+    COUNT: 10,                        // number of particles
+    SPEED: 120 * PX,                  // outward speed
+    LIFETIME: 400,                    // ms
+    SIZE_MIN: 2 * PX,                // smallest particle
+    SIZE_MAX: 4 * PX,                // largest particle
+    COLORS: [0xffd700, 0xffffff, 0xffee88],  // gold / white / light gold
+  },
+
+  // Player death particles
+  PLAYER_DEATH: {
+    COUNT: 18,                        // number of particles
+    SPEED: 180 * PX,                  // outward speed
+    LIFETIME: 600,                    // ms
+    SIZE_MIN: 3 * PX,
+    SIZE_MAX: 6 * PX,
+    COLORS: [0x00ffff, 0x0088aa, 0xffffff],  // cyan / dark cyan / white
+  },
+
+  // Enemy spawn hint particles
+  ENEMY_SPAWN: {
+    COUNT: 3,                         // very subtle
+    SPEED: 40 * PX,
+    LIFETIME: 200,                    // ms
+    SIZE: 2 * PX,
+    COLORS: [0xff3333, 0xff6600],     // red / orange
+  },
+
+  // Slowdown activation ring
+  SLOWDOWN_RING: {
+    COUNT: 12,
+    SPEED: 100 * PX,
+    LIFETIME: 500,                    // ms
+    SIZE: 3 * PX,
+    COLORS: [0x00ffff, 0xffffff],     // cyan / white
+  },
+
+  // Screen effects
+  SCREEN_SHAKE_DURATION: 300,
+  SCREEN_SHAKE_INTENSITY: 0.015,
+  FLASH_DURATION: 200,
+  DEATH_SLOWMO_SCALE: 0.3,
+  DEATH_SLOWMO_DURATION: 400,
+
+  // Slowdown overlay
+  SLOWDOWN_OVERLAY_ALPHA: 0.08,       // subtle cyan tint
+  SLOWDOWN_OVERLAY_COLOR: 0x00ffff,
+
+  // Background scroll
+  BG_SCROLL_SPEED_X: 0.3 * PX,       // pixels per frame
+  BG_SCROLL_SPEED_Y: 0.15 * PX,
+
+  // Ambient floating particles
+  AMBIENT: {
+    COUNT: 8,
+    ALPHA_MIN: 0.15,
+    ALPHA_MAX: 0.3,
+    SIZE_MIN: 1 * PX,
+    SIZE_MAX: 3 * PX,
+    SPEED_MIN: 8 * PX,
+    SPEED_MAX: 20 * PX,
+    COLORS: [0x00ffff, 0x2244aa, 0xff00ff, 0x00ff44],
+  },
+
+  // Player trail (afterimage)
+  PLAYER_TRAIL: {
+    LENGTH: 4,                        // number of afterimages
+    ALPHA_START: 0.35,                // first afterimage alpha
+    ALPHA_STEP: 0.08,                 // alpha decrease per step
+    UPDATE_INTERVAL: 50,              // ms between trail position captures
+  },
+
+  // Enemy glow pulse
+  ENEMY_GLOW: {
+    SINGULARITY_ALPHA_MIN: 0.8,
+    SINGULARITY_ALPHA_MAX: 1.0,
+    SINGULARITY_DURATION: 600,        // ms for one pulse cycle
+    DATA_STREAM_ALPHA_MIN: 0.85,
+    DATA_STREAM_ALPHA_MAX: 1.0,
+    DATA_STREAM_DURATION: 400,
+  },
+
+  // Fragment attraction hint
+  FRAGMENT_ATTRACT: {
+    RANGE_MULT: 3.0,                  // multiplier on collection radius
+    BOB_SPEED_MULT: 2.0,              // how much faster to bob when in range
+  },
+
+  // Score pop floating text
+  SCORE_POP: {
+    RISE_DISTANCE: 30 * PX,
+    DURATION: 500,                    // ms
+    FONT_SIZE_RATIO: 0.03,           // relative to GAME.HEIGHT
+    COLOR: '#ffd700',
+    SHADOW_COLOR: '#000000',
+  },
+
+  // Acceleration milestone warnings
+  ACCEL_WARNING: {
+    DURATION: 600,                    // ms
+    FONT_SIZE_RATIO: 0.04,           // relative to GAME.HEIGHT
+    COLOR: '#ff3333',
+    MILESTONES: [1.5, 2.0, 2.5, 3.0],
+    LABELS: {
+      1.5: 'ACCELERATING...',
+      2.0: 'SPEED x2',
+      2.5: 'SPEED x2.5',
+      3.0: 'MAX SPEED!',
+    },
+  },
+
+  // Game Over scene effects
+  GAMEOVER: {
+    GLITCH_INTERVAL: 2000,            // ms between glitch shifts
+    GLITCH_OFFSET: 2 * PX,           // px horizontal shift
+    GLITCH_DURATION: 80,              // ms for the glitch snap
+    SCORE_COUNTUP_DURATION: 800,      // ms to count from 0 to final score
+    AMBIENT_PARTICLE_COUNT: 6,
+    AMBIENT_ALPHA: 0.2,
+    AMBIENT_SPEED_MIN: 5 * PX,
+    AMBIENT_SPEED_MAX: 15 * PX,
+  },
+};
+
 // --- Transitions ---
 
 export const TRANSITION = {

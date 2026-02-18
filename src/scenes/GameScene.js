@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { GAME, PLAYER, COLORS, PX, TRANSITION, FRAGMENT, SPRITE_SCALE } from '../core/Constants.js';
+import { GAME, PLAYER, COLORS, PX, TRANSITION, FRAGMENT, SPRITE_SCALE, EFFECTS } from '../core/Constants.js';
 import { eventBus, Events } from '../core/EventBus.js';
 import { gameState } from '../core/GameState.js';
 import { Player } from '../entities/Player.js';
 import { SpawnSystem } from '../systems/SpawnSystem.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
+import { ParticleSystem } from '../systems/ParticleSystem.js';
 import { renderPixelArt } from '../core/PixelRenderer.js';
 import { CYBER } from '../sprites/palette.js';
 import { bgTiles, glitchFragment, circuitNode } from '../sprites/tiles.js';
@@ -70,6 +71,17 @@ export class GameScene extends Phaser.Scene {
       this.pointerActive = false;
     });
 
+    // Particle system (listens to EventBus for all visual effects)
+    this.particleSystem = new ParticleSystem(this);
+
+    // Ambient floating particles (data flowing through cyberspace)
+    this._createAmbientParticles();
+
+    // Player trail state
+    this._trailPositions = [];
+    this._trailSprites = [];
+    this._trailTimer = 0;
+
     gameState.started = true;
 
     // Fade in
@@ -122,6 +134,70 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  _createAmbientParticles() {
+    const cfg = EFFECTS.AMBIENT;
+    for (let i = 0; i < cfg.COUNT; i++) {
+      const x = Math.random() * GAME.WIDTH;
+      const y = Math.random() * GAME.HEIGHT;
+      const size = cfg.SIZE_MIN + Math.random() * (cfg.SIZE_MAX - cfg.SIZE_MIN);
+      const color = cfg.COLORS[Math.floor(Math.random() * cfg.COLORS.length)];
+      const alpha = cfg.ALPHA_MIN + Math.random() * (cfg.ALPHA_MAX - cfg.ALPHA_MIN);
+      const speed = cfg.SPEED_MIN + Math.random() * (cfg.SPEED_MAX - cfg.SPEED_MIN);
+
+      const p = this.add.rectangle(x, y, Math.max(1, Math.round(size)), Math.max(1, Math.round(size)), color, alpha);
+      p.setDepth(-2);
+
+      // Drift slowly across the screen, wrap around
+      const angle = Math.random() * Math.PI * 2;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+
+      this.tweens.add({
+        targets: p,
+        x: x + vx * 10,
+        y: y + vy * 10,
+        alpha: { from: alpha, to: alpha * 0.3 },
+        duration: 8000 + Math.random() * 4000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+  }
+
+  _updatePlayerTrail(delta) {
+    if (!this.player || !this.player.sprite) return;
+    const cfg = EFFECTS.PLAYER_TRAIL;
+    this._trailTimer += delta;
+
+    if (this._trailTimer >= cfg.UPDATE_INTERVAL) {
+      this._trailTimer = 0;
+      this._trailPositions.unshift({ x: this.player.sprite.x, y: this.player.sprite.y });
+      if (this._trailPositions.length > cfg.LENGTH) {
+        this._trailPositions.pop();
+      }
+    }
+
+    // Ensure we have enough trail sprites
+    while (this._trailSprites.length < this._trailPositions.length) {
+      const ts = this.add.rectangle(0, 0, 16 * SPRITE_SCALE * 0.6, 16 * SPRITE_SCALE * 0.6, 0x00ffff, 0);
+      ts.setDepth(4);
+      this._trailSprites.push(ts);
+    }
+
+    // Update trail positions and alpha
+    for (let i = 0; i < this._trailSprites.length; i++) {
+      if (i < this._trailPositions.length) {
+        const pos = this._trailPositions[i];
+        this._trailSprites[i].setPosition(pos.x, pos.y);
+        this._trailSprites[i].setAlpha(Math.max(0, cfg.ALPHA_START - i * cfg.ALPHA_STEP));
+        this._trailSprites[i].setVisible(true);
+      } else {
+        this._trailSprites[i].setVisible(false);
+      }
+    }
+  }
+
   update(time, delta) {
     if (gameState.gameOver) return;
 
@@ -159,6 +235,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.player.update(inputX, inputY);
+
+    // --- Player trail ---
+    this._updatePlayerTrail(delta || 16);
 
     // --- Spawn system update (clean up off-screen enemies, update homing) ---
     this.spawnSystem.update();
@@ -224,6 +303,9 @@ export class GameScene extends Phaser.Scene {
     // Clean up when scene is stopped
     if (this.spawnSystem) {
       this.spawnSystem.destroy();
+    }
+    if (this.particleSystem) {
+      this.particleSystem.destroy();
     }
   }
 }

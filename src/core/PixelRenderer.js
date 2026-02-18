@@ -1,3 +1,5 @@
+import Phaser from 'phaser';
+
 /**
  * Renders a 2D pixel art array to a Phaser texture.
  *
@@ -64,7 +66,9 @@ export function renderSpriteSheet(scene, frames, palette, key, scale = 2) {
       }
     }
   });
-  scene.textures.addSpriteSheet(key, scene.textures.addCanvas(`${key}-canvas`, canvas).source[0], {
+  // Register canvas as a plain texture, then add spritesheet frames to it
+  const tex = scene.textures.addCanvas(key, canvas);
+  Phaser.Textures.Parsers.SpriteSheet(tex, 0, 0, 0, canvas.width, canvas.height, {
     frameWidth: frameW,
     frameHeight: frameH,
   });
