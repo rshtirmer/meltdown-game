@@ -1,4 +1,4 @@
-import { stack, note, s } from '@strudel/web';
+import { stack, note } from '@strudel/web';
 
 // Gameplay BGM — dark, driving cyberpunk chiptune
 // Minor key, pulsing bass, tension arps, restrained drums
@@ -40,9 +40,13 @@ export function gameplayBGM() {
       .lpf(400)
       .decay(0.2)
       .sustain(0.3),
-    // Drums — restrained, cyberpunk pulse
-    s('bd ~ sd ~, hh*8')
-      .gain(0.25),
+    // Synth percussion — kick/snare via short sine/noise oscillators
+    note('c1 ~ g1 ~ c1 ~ g1 ~')
+      .s('sine')
+      .gain(0.2)
+      .decay(0.08)
+      .sustain(0)
+      .lpf(200),
     // Tension arp — barely audible movement
     note('e4 g4 bb4 e5')
       .s('square')
